@@ -1,10 +1,28 @@
 from qthandy import hbox, vbox, transparent
-from qtpy.QtCore import Qt, Signal, QSize, QPropertyAnimation, QEasingCurve, QPoint
-from qtpy.QtGui import QCursor, QAction, QRegion
+from qtpy.QtCore import Qt, Signal, QSize, QPropertyAnimation, QEasingCurve, QPoint, QObject, QEvent
+from qtpy.QtGui import QCursor, QAction, QRegion, QMouseEvent
 from qtpy.QtWidgets import QApplication, QAbstractButton, QToolButton, QLabel, QFrame, QWidget
 
 
+class MouseEventDelegate(QObject):
+    def __init__(self, target, delegate):
+        super().__init__(target)
+        self._delegate = delegate
+
+    def eventFilter(self, watched: QObject, event: QEvent) -> bool:
+        if event.type() == QEvent.Type.MouseButtonPress:
+            self._delegate.mousePressEvent(event)
+            return False
+        elif event.type() == QEvent.Type.MouseButtonRelease:
+            self._delegate.mouseReleaseEvent(event)
+            return False
+
+        return super(MouseEventDelegate, self).eventFilter(watched, event)
+
+
 class MenuItemWidget(QFrame):
+    triggered = Signal()
+
     def __init__(self, action: QAction, parent=None):
         super().__init__(parent)
         self._action = action
@@ -13,6 +31,7 @@ class MenuItemWidget(QFrame):
         self._icon = QToolButton(self)
         transparent(self._icon)
         self._icon.setIconSize(QSize(16, 16))
+        self._icon.installEventFilter(MouseEventDelegate(self._icon, self))
         self._text = QLabel(self)
         transparent(self._text)
 
@@ -27,6 +46,20 @@ class MenuItemWidget(QFrame):
         self._text.setText(self._action.text())
         self._icon.setToolTip(self._action.toolTip())
         self._text.setToolTip(self._action.toolTip())
+
+    def mousePressEvent(self, event: QMouseEvent) -> None:
+        self.setProperty('pressed', True)
+        self._restyle()
+
+    def mouseReleaseEvent(self, event: QMouseEvent) -> None:
+        self.setProperty('pressed', False)
+        self._restyle()
+        self.triggered.emit()
+        self._action.trigger()
+
+    def _restyle(self):
+        self.style().unpolish(self)
+        self.style().polish(self)
 
 
 class MenuWidget(QWidget):
@@ -47,7 +80,11 @@ class MenuWidget(QWidget):
         }
         MenuItemWidget:hover {
             background-color:#EDEDED;
-        }''')
+        }
+        MenuItemWidget[pressed=true] {
+            background-color:#DCDCDC;
+        }
+        ''')
 
         vbox(self, 0, 0)
         self._frame = QFrame()
@@ -63,6 +100,7 @@ class MenuWidget(QWidget):
 
     def addAction(self, action: QAction):
         wdg = MenuItemWidget(action, self)
+        wdg.triggered.connect(self.close)
         self._frame.layout().addWidget(wdg)
 
     def hideEvent(self, e):
