@@ -1,3 +1,5 @@
+from PySide6.QtCore import QPropertyAnimation, QEasingCurve, QPoint
+from PySide6.QtGui import QRegion
 from qthandy import hbox, vbox, pointy
 from qtpy.QtCore import Qt, Signal, QSize
 from qtpy.QtGui import QCursor, QAction
@@ -15,6 +17,7 @@ class MenuItemWidget(QWidget):
         self._btnAction.setIconSize(QSize(18, 18))
         self.layout().addWidget(self._btnAction)
 
+        self._action.changed.connect(self.refresh)
         self.refresh()
 
     def refresh(self):
@@ -33,9 +36,14 @@ class MenuWidget(QWidget):
                             Qt.WindowType.NoDropShadowWindowHint)
         self.setStyleSheet('QWidget {background-color: #f8f9fa;}')
 
-        vbox(self, 2, 3)
+        vbox(self, 0, 3)
         if isinstance(parent, QAbstractButton):
             parent.clicked.connect(self.exec)
+
+        self._posAnim = QPropertyAnimation(self, b'pos', self)
+        self._posAnim.setDuration(50)
+        self._posAnim.setEasingCurve(QEasingCurve.Type.OutQuad)
+        self._posAnim.valueChanged.connect(self._positionAnimChanged)
 
     def addAction(self, action: QAction):
         wdg = MenuItemWidget(action, self)
@@ -51,6 +59,18 @@ class MenuWidget(QWidget):
         w, h = self.width() + 5, self.height() + 5
         pos.setX(min(pos.x() - self.layout().contentsMargins().left(), screen_rect.right() - w))
         pos.setY(min(pos.y() - 4, screen_rect.bottom() - h))
-        self.move(pos)
+
         self.aboutToShow.emit()
+        self._posAnim.setStartValue(pos - QPoint(0, int(h / 2)))
+        self._posAnim.setEndValue(pos)
+        self._posAnim.setEasingCurve(QEasingCurve.OutQuad)
+        self._posAnim.start()
+
         self.show()
+
+    def _positionAnimChanged(self, pos: QPoint):
+        m = self.layout().contentsMargins()
+        w = self.width() + m.left() + m.right()
+        h = self.height() + m.top() + m.bottom()
+        y = self._posAnim.endValue().y() - pos.y()
+        self.setMask(QRegion(0, y, w, h))
