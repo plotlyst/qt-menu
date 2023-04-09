@@ -9,6 +9,7 @@ with (HERE / 'README.md').open('rt') as fh:
 REQUIREMENTS: dict = {
     'core': [
         'qtpy',
+        'qt-handy',
     ],
     'test': [
         'pytest',
