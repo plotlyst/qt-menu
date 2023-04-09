@@ -15,4 +15,3 @@ def test_menu_show(qtbot):
     assert menu.isHidden()
     btn.click()
     assert menu.isVisible()
-
