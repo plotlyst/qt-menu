@@ -1,5 +1,7 @@
+from typing import Optional
+
 from qthandy import hbox, vbox, transparent
-from qtpy.QtCore import Qt, Signal, QSize, QPropertyAnimation, QEasingCurve, QPoint, QObject, QEvent
+from qtpy.QtCore import Qt, Signal, QSize, QPropertyAnimation, QEasingCurve, QPoint, QObject, QEvent, QTimer
 from qtpy.QtGui import QCursor, QAction, QRegion, QMouseEvent
 from qtpy.QtWidgets import QApplication, QAbstractButton, QToolButton, QLabel, QFrame, QWidget
 
@@ -53,13 +55,17 @@ class MenuItemWidget(QFrame):
 
     def mouseReleaseEvent(self, event: QMouseEvent) -> None:
         self.setProperty('pressed', False)
+        QTimer.singleShot(10, self._trigger)
         self._restyle()
-        self.triggered.emit()
-        self._action.trigger()
 
     def _restyle(self):
         self.style().unpolish(self)
         self.style().polish(self)
+        self.update()
+
+    def _trigger(self):
+        self.triggered.emit()
+        self._action.trigger()
 
 
 class MenuWidget(QWidget):
@@ -87,6 +93,7 @@ class MenuWidget(QWidget):
         ''')
 
         vbox(self, 0, 0)
+        self._triggeredAction: Optional[QAction] = None
         self._frame = QFrame()
         self.layout().addWidget(self._frame)
         vbox(self._frame, spacing=0)
