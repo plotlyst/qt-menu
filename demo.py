@@ -21,9 +21,12 @@ class MainWindow(QMainWindow):
 
         self._menu = MenuWidget(self._btn)
         action = QAction(qtawesome.icon('ei.adjust'), 'Action 1')
+        action.triggered.connect(lambda: print('clicked'))
         action.setToolTip('Action 1 tooltip')
+        self._menu.addSection('Section 1')
         self._menu.addAction(action)
         self._menu.addAction(QAction(qtawesome.icon('ei.adjust-alt'), 'Action 2'))
+        self._menu.addSection('Section', qtawesome.icon('ei.child'))
         self._menu.addAction(QAction(qtawesome.icon('ei.child'), 'Action 3'))
 
 
