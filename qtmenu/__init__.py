@@ -1,9 +1,18 @@
-from typing import Optional
+from typing import List
 
-from qthandy import hbox, vbox, transparent
+from qthandy import hbox, vbox, transparent, clear_layout, line, margins
 from qtpy.QtCore import Qt, Signal, QSize, QPropertyAnimation, QEasingCurve, QPoint, QObject, QEvent, QTimer
 from qtpy.QtGui import QCursor, QAction, QRegion, QMouseEvent
-from qtpy.QtWidgets import QApplication, QAbstractButton, QToolButton, QLabel, QFrame, QWidget
+from qtpy.QtWidgets import QApplication, QAbstractButton, QToolButton, QLabel, QFrame, QWidget, QPushButton
+
+
+def wrap(widget: QWidget, margin_left: int = 0, margin_top: int = 0, margin_right: int = 0,
+         margin_bottom: int = 0) -> QWidget:
+    parent = QWidget()
+    vbox(parent, 0, 0).addWidget(widget)
+    margins(parent, margin_left, margin_top, margin_right, margin_bottom)
+
+    return parent
 
 
 class MouseEventDelegate(QObject):
@@ -42,6 +51,9 @@ class MenuItemWidget(QFrame):
 
         self._action.changed.connect(self.refresh)
         self.refresh()
+
+    def action(self) -> QAction:
+        return self._action
 
     def refresh(self):
         self._icon.setIcon(self._action.icon())
@@ -93,7 +105,7 @@ class MenuWidget(QWidget):
         ''')
 
         vbox(self, 0, 0)
-        self._triggeredAction: Optional[QAction] = None
+        self._actions: List[MenuItemWidget] = []
         self._frame = QFrame()
         self.layout().addWidget(self._frame)
         vbox(self._frame, spacing=0)
@@ -101,14 +113,36 @@ class MenuWidget(QWidget):
             parent.clicked.connect(self.exec)
 
         self._posAnim = QPropertyAnimation(self, b'pos', self)
-        self._posAnim.setDuration(50)
+        self._posAnim.setDuration(120)
         self._posAnim.setEasingCurve(QEasingCurve.Type.OutQuad)
         self._posAnim.valueChanged.connect(self._positionAnimChanged)
+
+    def actions(self) -> List[QAction]:
+        return [x.action() for x in self._actions]
+
+    def clear(self):
+        self._actions.clear()
+        clear_layout(self._frame)
+
+    def isEmpty(self) -> bool:
+        return len(self._actions) == 0
 
     def addAction(self, action: QAction):
         wdg = MenuItemWidget(action, self)
         wdg.triggered.connect(self.close)
         self._frame.layout().addWidget(wdg)
+        self._actions.append(wdg)
+
+    def addSection(self, text: str, icon=None):
+        section = QPushButton(text)
+        transparent(section)
+        if icon:
+            section.setIcon(icon)
+        self._frame.layout().addWidget(wrap(section, margin_left=2, margin_top=2), alignment=Qt.AlignmentFlag.AlignLeft)
+        self.addSeparator()
+
+    def addSeparator(self):
+        self._frame.layout().addWidget(line(color='lightgrey'))
 
     def hideEvent(self, e):
         self.aboutToHide.emit()
