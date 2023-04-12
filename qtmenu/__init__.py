@@ -3,7 +3,8 @@ from typing import List, Optional
 from qthandy import hbox, vbox, transparent, clear_layout, line, margins
 from qtpy.QtCore import Qt, Signal, QSize, QPropertyAnimation, QEasingCurve, QPoint, QObject, QEvent, QTimer
 from qtpy.QtGui import QAction, QRegion, QMouseEvent, QCursor, QShowEvent, QHideEvent
-from qtpy.QtWidgets import QApplication, QAbstractButton, QToolButton, QLabel, QFrame, QWidget, QPushButton, QMenu
+from qtpy.QtWidgets import QApplication, QAbstractButton, QToolButton, QLabel, QFrame, QWidget, QPushButton, QMenu, \
+    QScrollArea
 
 
 def wrap(widget: QWidget, margin_left: int = 0, margin_top: int = 0, margin_right: int = 0,
@@ -107,8 +108,9 @@ class MenuWidget(QWidget):
         vbox(self, 0, 0)
         self._menuItems: List[MenuItemWidget] = []
         self._frame = QFrame()
-        self.layout().addWidget(self._frame)
         vbox(self._frame, spacing=0)
+        self._initLayout()
+
         if isinstance(parent, QAbstractButton):
             MenuDelegate(parent, self)
             parent.clicked.connect(lambda: self.exec())
@@ -117,6 +119,9 @@ class MenuWidget(QWidget):
         self._posAnim.setDuration(120)
         self._posAnim.setEasingCurve(QEasingCurve.Type.OutQuad)
         self._posAnim.valueChanged.connect(self._positionAnimChanged)
+
+    def _initLayout(self):
+        self.layout().addWidget(self._frame)
 
     def actions(self) -> List[QAction]:
         return [x.action() for x in self._menuItems]
@@ -179,6 +184,17 @@ class MenuWidget(QWidget):
         h = self.height() + m.top() + m.bottom()
         y = self._posAnim.endValue().y() - pos.y()
         self.setMask(QRegion(0, y, w, h))
+
+
+class ScrollableMenuWidget(MenuWidget):
+    def __init__(self, parent=None):
+        self._scrollarea = QScrollArea()
+        self._scrollarea.setWidgetResizable(True)
+        super(ScrollableMenuWidget, self).__init__(parent)
+
+    def _initLayout(self):
+        self.layout().addWidget(self._scrollarea)
+        self._scrollarea.setWidget(self._frame)
 
 
 class MenuDelegate(QMenu):
