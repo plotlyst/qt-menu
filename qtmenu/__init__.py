@@ -126,13 +126,16 @@ class MenuWidget(QWidget):
         clear_layout(self._frame)
 
     def isEmpty(self) -> bool:
-        return len(self._menuItems) == 0
+        return self._frame.layout().count() == 0
 
     def addAction(self, action: QAction):
         wdg = MenuItemWidget(action, self)
         wdg.triggered.connect(self.close)
         self._frame.layout().addWidget(wdg)
         self._menuItems.append(wdg)
+
+    def addWidget(self, widget):
+        self._frame.layout().addWidget(widget)
 
     def addSection(self, text: str, icon=None):
         section = QPushButton(text)
