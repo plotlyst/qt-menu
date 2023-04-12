@@ -2,8 +2,8 @@ from typing import List, Optional
 
 from qthandy import hbox, vbox, transparent, clear_layout, line, margins
 from qtpy.QtCore import Qt, Signal, QSize, QPropertyAnimation, QEasingCurve, QPoint, QObject, QEvent, QTimer
-from qtpy.QtGui import QAction, QRegion, QMouseEvent, QCursor
-from qtpy.QtWidgets import QApplication, QAbstractButton, QToolButton, QLabel, QFrame, QWidget, QPushButton
+from qtpy.QtGui import QAction, QRegion, QMouseEvent, QCursor, QShowEvent, QHideEvent
+from qtpy.QtWidgets import QApplication, QAbstractButton, QToolButton, QLabel, QFrame, QWidget, QPushButton, QMenu
 
 
 def wrap(widget: QWidget, margin_left: int = 0, margin_top: int = 0, margin_right: int = 0,
@@ -109,6 +109,7 @@ class MenuWidget(QWidget):
         self.layout().addWidget(self._frame)
         vbox(self._frame, spacing=0)
         if isinstance(parent, QAbstractButton):
+            MenuDelegate(parent, self)
             parent.clicked.connect(lambda: self.exec())
 
         self._posAnim = QPropertyAnimation(self, b'pos', self)
@@ -141,7 +142,7 @@ class MenuWidget(QWidget):
         self.addSeparator()
 
     def addSeparator(self):
-        self._frame.layout().addWidget(line(color='lightgrey'))
+        self._frame.layout().addWidget(line(color='#DCDCDC'))
 
     def hideEvent(self, e):
         self.aboutToHide.emit()
@@ -174,3 +175,26 @@ class MenuWidget(QWidget):
         h = self.height() + m.top() + m.bottom()
         y = self._posAnim.endValue().y() - pos.y()
         self.setMask(QRegion(0, y, w, h))
+
+
+class MenuDelegate(QMenu):
+    def __init__(self, parent, menu: MenuWidget):
+        super(MenuDelegate, self).__init__(parent)
+        self._menu = menu
+
+        if isinstance(parent, (QPushButton, QToolButton)):
+            parent.setMenu(self)
+
+        self.setDisabled(True)
+
+    def showEvent(self, a0: QShowEvent) -> None:
+        self._menu.exec()
+
+    def hideEvent(self, event: QHideEvent) -> None:
+        super(MenuDelegate, self).hideEvent(event)
+
+    def isVisible(self) -> bool:
+        return self._menu.isVisible()
+
+    def actions(self) -> List[QAction]:
+        return self._menu.actions()

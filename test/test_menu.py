@@ -4,7 +4,7 @@ from qtpy.QtWidgets import QPushButton
 from qtmenu import MenuWidget
 
 
-def test_show(qtbot):
+def test_init(qtbot):
     btn = QPushButton('Button')
     menu = MenuWidget(btn)
     menu.addAction(QAction('Action 1'))
@@ -13,8 +13,9 @@ def test_show(qtbot):
     qtbot.addWidget(btn)
 
     assert menu.isHidden()
-    btn.click()
-    assert menu.isVisible()
+    assert btn.menu()
+    assert not menu.isVisible()
+    assert not btn.menu().isEnabled()
 
 
 def test_clear(qtbot):
