@@ -181,6 +181,8 @@ class MenuDelegate(QMenu):
     def __init__(self, parent, menu: MenuWidget):
         super(MenuDelegate, self).__init__(parent)
         self._menu = menu
+        self._menu.aboutToShow.connect(self.aboutToShow.emit)
+        self._menu.aboutToHide.connect(self.aboutToHide.emit)
 
         if isinstance(parent, (QPushButton, QToolButton)):
             parent.setMenu(self)
