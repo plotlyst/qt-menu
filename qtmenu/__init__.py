@@ -1,8 +1,8 @@
-from typing import List
+from typing import List, Optional
 
 from qthandy import hbox, vbox, transparent, clear_layout, line, margins
 from qtpy.QtCore import Qt, Signal, QSize, QPropertyAnimation, QEasingCurve, QPoint, QObject, QEvent, QTimer
-from qtpy.QtGui import QCursor, QAction, QRegion, QMouseEvent
+from qtpy.QtGui import QAction, QRegion, QMouseEvent, QCursor
 from qtpy.QtWidgets import QApplication, QAbstractButton, QToolButton, QLabel, QFrame, QWidget, QPushButton
 
 
@@ -37,7 +37,7 @@ class MenuItemWidget(QFrame):
     def __init__(self, action: QAction, parent=None):
         super().__init__(parent)
         self._action = action
-        hbox(self, 5)
+        hbox(self, 5, 1)
 
         self._icon = QToolButton(self)
         transparent(self._icon)
@@ -109,7 +109,7 @@ class MenuWidget(QWidget):
         self.layout().addWidget(self._frame)
         vbox(self._frame, spacing=0)
         if isinstance(parent, QAbstractButton):
-            parent.clicked.connect(self.exec)
+            parent.clicked.connect(lambda: self.exec())
 
         self._posAnim = QPropertyAnimation(self, b'pos', self)
         self._posAnim.setDuration(120)
@@ -147,8 +147,14 @@ class MenuWidget(QWidget):
         self.aboutToHide.emit()
         e.accept()
 
-    def exec(self):
-        pos = QCursor.pos()
+    def exec(self, pos: Optional[QPoint] = None):
+        if pos is None:
+            if self.parent() and self.parent().parent():
+                pos = self.parent().parent().mapToGlobal(self.parent().pos())
+                pos.setY(pos.y() + self.parent().height())
+            else:
+                pos = QCursor.pos()
+
         screen_rect = QApplication.screenAt(pos).availableGeometry()
         w, h = self.width() + 5, self.height() + 5
         pos.setX(min(pos.x() - self.layout().contentsMargins().left(), screen_rect.right() - w))
