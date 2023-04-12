@@ -19,6 +19,7 @@ def test_show(qtbot):
 
 def test_clear(qtbot):
     menu = MenuWidget()
+    qtbot.addWidget(menu)
     action1 = QAction('Action 1')
     menu.addAction(action1)
     action2 = QAction('Action 2')
