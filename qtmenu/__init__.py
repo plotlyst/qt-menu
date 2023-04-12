@@ -104,7 +104,7 @@ class MenuWidget(QWidget):
         ''')
 
         vbox(self, 0, 0)
-        self._actions: List[MenuItemWidget] = []
+        self._menuItems: List[MenuItemWidget] = []
         self._frame = QFrame()
         self.layout().addWidget(self._frame)
         vbox(self._frame, spacing=0)
@@ -118,20 +118,20 @@ class MenuWidget(QWidget):
         self._posAnim.valueChanged.connect(self._positionAnimChanged)
 
     def actions(self) -> List[QAction]:
-        return [x.action() for x in self._actions]
+        return [x.action() for x in self._menuItems]
 
     def clear(self):
-        self._actions.clear()
+        self._menuItems.clear()
         clear_layout(self._frame)
 
     def isEmpty(self) -> bool:
-        return len(self._actions) == 0
+        return len(self._menuItems) == 0
 
     def addAction(self, action: QAction):
         wdg = MenuItemWidget(action, self)
         wdg.triggered.connect(self.close)
         self._frame.layout().addWidget(wdg)
-        self._actions.append(wdg)
+        self._menuItems.append(wdg)
 
     def addSection(self, text: str, icon=None):
         section = QPushButton(text)
