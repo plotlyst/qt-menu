@@ -60,6 +60,7 @@ class MenuItemWidget(QFrame):
         self._text.setText(self._action.text())
         self._icon.setToolTip(self._action.toolTip())
         self._text.setToolTip(self._action.toolTip())
+        self.setEnabled(self._action.isEnabled())
 
     def mousePressEvent(self, event: QMouseEvent) -> None:
         self.setProperty('pressed', True)
