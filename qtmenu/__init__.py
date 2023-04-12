@@ -158,7 +158,7 @@ class MenuWidget(QWidget):
         self.aboutToShow.emit()
         self._posAnim.setStartValue(pos - QPoint(0, int(h / 2)))
         self._posAnim.setEndValue(pos)
-        self._posAnim.setEasingCurve(QEasingCurve.OutQuad)
+        self._posAnim.setEasingCurve(QEasingCurve.Type.OutQuad)
         self._posAnim.start()
 
         self.show()
