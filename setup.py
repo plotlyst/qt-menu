@@ -12,7 +12,7 @@ REQUIREMENTS: dict = {
         'qt-handy',
     ],
     'test': [
-        'pytest',
+        'pytest==7.2.2',
         'pytest-qt',
         'pytest-cov',
         'pytest-randomly',
