@@ -270,7 +270,7 @@ class GridMenuWidget(MenuWidget):
         super(GridMenuWidget, self).__init__(parent)
 
     def _initLayout(self):
-        layout = grid(self._frame)
+        grid(self._frame)
         self.layout().addWidget(self._frame)
 
     def addAction(self, action: QAction, row: int, column: int, rowSpan: int = 1, colSpan: int = 1):
