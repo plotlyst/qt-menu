@@ -9,6 +9,7 @@ with (HERE / 'README.md').open('rt') as fh:
 REQUIREMENTS: dict = {
     'core': [
         'qtpy',
+        'qt-handy',
     ],
     'test': [
         'pytest',
@@ -23,7 +24,7 @@ REQUIREMENTS: dict = {
 }
 
 setup(
-    name='',
+    name='qt-menu',
     version='0.1.0',
 
     author='Zsolt Kovari',
@@ -31,7 +32,7 @@ setup(
     description='',
     long_description=LONG_DESCRIPTION,
     long_description_content_type='text/markdown',
-    url='',
+    url='https://github.com/plotlyst/qt-menu',
 
     packages=find_packages(),
     python_requires='>=3.6, <4',
