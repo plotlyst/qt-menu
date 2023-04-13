@@ -2,11 +2,11 @@ import re
 from enum import Enum
 from typing import List, Optional
 
-from qthandy import vbox, transparent, clear_layout, margins, decr_font, hbox, grid, line, vspacer
+from qthandy import vbox, transparent, clear_layout, margins, decr_font, hbox, grid, line, sp, vspacer
 from qtpy.QtCore import Qt, Signal, QSize, QPropertyAnimation, QEasingCurve, QPoint, QObject, QEvent, QTimer
 from qtpy.QtGui import QAction, QRegion, QMouseEvent, QCursor, QShowEvent, QHideEvent
 from qtpy.QtWidgets import QApplication, QAbstractButton, QToolButton, QLabel, QFrame, QWidget, QPushButton, QMenu, \
-    QScrollArea, QLineEdit
+    QScrollArea, QLineEdit, QCheckBox
 
 
 def wrap(widget: QWidget, margin_left: int = 0, margin_top: int = 0, margin_right: int = 0,
@@ -66,6 +66,9 @@ class MenuItemWidget(QFrame):
 
         vbox(self, 5, 0)
 
+        self._checkBox = QCheckBox()
+        self._checkBox.clicked.connect(self._trigger)
+        sp(self._checkBox).h_max()
         self._icon = QToolButton(self)
         transparent(self._icon)
         self._icon.setIconSize(QSize(16, 16))
@@ -77,7 +80,7 @@ class MenuItemWidget(QFrame):
         transparent(self._description)
         decr_font(self._description)
 
-        self.layout().addWidget(group(self._icon, self._text, margin=0, spacing=1))
+        self.layout().addWidget(group(self._checkBox, self._icon, self._text, margin=0, spacing=1))
         self.layout().addWidget(self._description)
 
         self._action.changed.connect(self.refresh)
@@ -106,7 +109,10 @@ class MenuItemWidget(QFrame):
             else:
                 self._description.setHidden(True)
 
+        self._checkBox.setChecked(self._action.isChecked())
+        self._checkBox.setVisible(self._action.isCheckable())
         self.setEnabled(self._action.isEnabled())
+        self.setVisible(self._action.isVisible())
 
     def mousePressEvent(self, event: QMouseEvent) -> None:
         self.setProperty('pressed', True)
@@ -123,8 +129,10 @@ class MenuItemWidget(QFrame):
         self.update()
 
     def _trigger(self):
+        if self._action.isCheckable():
+            self._action.toggle()
         self.triggered.emit()
-        self._action.trigger()
+        self._action.triggered.emit(self._action.isChecked())
 
 
 class MenuSectionWidget(QWidget):
@@ -170,11 +178,11 @@ class MenuWidget(QWidget):
 
         self._tooltipDisplayMode = ActionTooltipDisplayMode.ON_HOVER
         self._search: Optional[QLineEdit] = None
+        self._endSpacer: Optional[QWidget] = None
         vbox(self, 0, 0)
         self._menuItems: List[MenuItemWidget] = []
         self._frame = QFrame()
         self._initLayout()
-        self.layout().addWidget(vspacer())
 
         if isinstance(parent, QAbstractButton):
             MenuDelegate(parent, self)
@@ -207,10 +215,16 @@ class MenuWidget(QWidget):
             self._search.setClearButtonEnabled(True)
             self._search.textChanged.connect(self._applySearch)
             self.layout().insertWidget(0, wrap(self._search, margin_left=5, margin_right=5),
-                                       alignment=Qt.AlignmentFlag.AlignRight)
+                                       alignment=Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignTop)
+
+            self._endSpacer = vspacer()
+            self._endSpacer.setMinimumHeight(1)
+            self.layout().addWidget(self._endSpacer)
         elif self._search:
             self.layout().removeWidget(self._search)
             self._search = None
+            self.layout().removeWidget(self._endSpacer)
+            self._endSpacer = None
 
     def clear(self):
         self._menuItems.clear()
