@@ -1,6 +1,7 @@
+from enum import Enum
 from typing import List, Optional
 
-from qthandy import hbox, vbox, transparent, clear_layout, line, margins
+from qthandy import vbox, transparent, clear_layout, line, margins, decr_font, hbox
 from qtpy.QtCore import Qt, Signal, QSize, QPropertyAnimation, QEasingCurve, QPoint, QObject, QEvent, QTimer
 from qtpy.QtGui import QAction, QRegion, QMouseEvent, QCursor, QShowEvent, QHideEvent
 from qtpy.QtWidgets import QApplication, QAbstractButton, QToolButton, QLabel, QFrame, QWidget, QPushButton, QMenu, \
@@ -14,6 +15,18 @@ def wrap(widget: QWidget, margin_left: int = 0, margin_top: int = 0, margin_righ
     margins(parent, margin_left, margin_top, margin_right, margin_bottom)
 
     return parent
+
+
+def group(*widgets, margin: int = 2, spacing: int = 3, parent=None, vertical: bool = False) -> QWidget:
+    container = QWidget(parent)
+    if vertical:
+        vbox(container, margin, spacing)
+    else:
+        hbox(container, margin, spacing)
+
+    for w in widgets:
+        container.layout().addWidget(w)
+    return container
 
 
 class MouseEventDelegate(QObject):
@@ -32,13 +45,21 @@ class MouseEventDelegate(QObject):
         return super(MouseEventDelegate, self).eventFilter(watched, event)
 
 
+class ActionTooltipDisplayMode(Enum):
+    NONE = 0
+    ON_HOVER = 1
+    DISPLAY_UNDER = 2
+
+
 class MenuItemWidget(QFrame):
     triggered = Signal()
 
-    def __init__(self, action: QAction, parent=None):
+    def __init__(self, action: QAction, parent=None, tooltipMode=ActionTooltipDisplayMode.ON_HOVER):
         super().__init__(parent)
         self._action = action
-        hbox(self, 5, 1)
+        self._tooltipDisplayMode = tooltipMode
+
+        vbox(self, 5, 0)
 
         self._icon = QToolButton(self)
         transparent(self._icon)
@@ -46,9 +67,13 @@ class MenuItemWidget(QFrame):
         self._icon.installEventFilter(MouseEventDelegate(self._icon, self))
         self._text = QLabel(self)
         transparent(self._text)
+        self._description = QLabel(self._action.toolTip())
+        self._description.setProperty('description', True)
+        transparent(self._description)
+        decr_font(self._description)
 
-        self.layout().addWidget(self._icon)
-        self.layout().addWidget(self._text)
+        self.layout().addWidget(group(self._icon, self._text, margin=0, spacing=1))
+        self.layout().addWidget(self._description)
 
         self._action.changed.connect(self.refresh)
         self.refresh()
@@ -56,11 +81,26 @@ class MenuItemWidget(QFrame):
     def action(self) -> QAction:
         return self._action
 
+    def setTooltipDisplayMode(self, mode: ActionTooltipDisplayMode):
+        self._tooltipDisplayMode = mode
+        self.refresh()
+
     def refresh(self):
         self._icon.setIcon(self._action.icon())
         self._text.setText(self._action.text())
-        self._icon.setToolTip(self._action.toolTip())
-        self._text.setToolTip(self._action.toolTip())
+        if self._tooltipDisplayMode == ActionTooltipDisplayMode.NONE:
+            self._icon.setToolTip('')
+            self._text.setToolTip('')
+            self._description.setHidden(True)
+        else:
+            self._icon.setToolTip(self._action.toolTip())
+            self._text.setToolTip(self._action.toolTip())
+            if self._tooltipDisplayMode == ActionTooltipDisplayMode.DISPLAY_UNDER:
+                self._description.setText(self._action.toolTip())
+                self._description.setVisible(True)
+            else:
+                self._description.setHidden(True)
+
         self.setEnabled(self._action.isEnabled())
 
     def mousePressEvent(self, event: QMouseEvent) -> None:
@@ -89,7 +129,6 @@ class MenuWidget(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setWindowFlags(Qt.WindowType.Popup | Qt.WindowType.FramelessWindowHint)
-        # self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
         self.setStyleSheet('''
         QFrame {
             background-color: #F5F5F5;
@@ -103,8 +142,12 @@ class MenuWidget(QWidget):
         MenuItemWidget[pressed=true] {
             background-color:#DCDCDC;
         }
+        QLabel[description=true] {
+            color: grey;
+        }
         ''')
 
+        self._tooltipDisplayMode = ActionTooltipDisplayMode.ON_HOVER
         vbox(self, 0, 0)
         self._menuItems: List[MenuItemWidget] = []
         self._frame = QFrame()
@@ -126,6 +169,14 @@ class MenuWidget(QWidget):
     def actions(self) -> List[QAction]:
         return [x.action() for x in self._menuItems]
 
+    def tooltipDisplayMode(self) -> ActionTooltipDisplayMode:
+        return self._tooltipDisplayMode
+
+    def setTooltipDisplayMode(self, mode: ActionTooltipDisplayMode):
+        self._tooltipDisplayMode = mode
+        for item in self._menuItems:
+            item.setTooltipDisplayMode(self._tooltipDisplayMode)
+
     def clear(self):
         self._menuItems.clear()
         clear_layout(self._frame)
@@ -134,7 +185,7 @@ class MenuWidget(QWidget):
         return self._frame.layout().count() == 0
 
     def addAction(self, action: QAction):
-        wdg = MenuItemWidget(action, self)
+        wdg = MenuItemWidget(action, self, self._tooltipDisplayMode)
         wdg.triggered.connect(self.close)
         self._frame.layout().addWidget(wdg)
         self._menuItems.append(wdg)

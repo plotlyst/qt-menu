@@ -4,7 +4,7 @@ import qtawesome
 from qtpy.QtGui import QAction
 from qtpy.QtWidgets import QMainWindow, QApplication, QWidget, QVBoxLayout, QPushButton
 
-from qtmenu import MenuWidget
+from qtmenu import MenuWidget, ActionTooltipDisplayMode
 
 
 class MainWindow(QMainWindow):
@@ -22,7 +22,8 @@ class MainWindow(QMainWindow):
         self._menu = MenuWidget(self._btn)
         action = QAction(qtawesome.icon('ei.adjust'), 'Action 1')
         action.triggered.connect(lambda: print('clicked'))
-        action.setToolTip('Action 1 tooltip')
+        action.setToolTip('Test description which is much longer than before')
+        self._menu.setTooltipDisplayMode(ActionTooltipDisplayMode.DISPLAY_UNDER)
         self._menu.addSection('Section 1')
         self._menu.addAction(action)
         self._menu.addAction(QAction(qtawesome.icon('ei.adjust-alt'), 'Action 2'))
