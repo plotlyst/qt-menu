@@ -1,11 +1,12 @@
+import re
 from enum import Enum
 from typing import List, Optional
 
-from qthandy import vbox, transparent, clear_layout, margins, decr_font, hbox, grid, line
+from qthandy import vbox, transparent, clear_layout, margins, decr_font, hbox, grid, line, vspacer
 from qtpy.QtCore import Qt, Signal, QSize, QPropertyAnimation, QEasingCurve, QPoint, QObject, QEvent, QTimer
 from qtpy.QtGui import QAction, QRegion, QMouseEvent, QCursor, QShowEvent, QHideEvent
 from qtpy.QtWidgets import QApplication, QAbstractButton, QToolButton, QLabel, QFrame, QWidget, QPushButton, QMenu, \
-    QScrollArea
+    QScrollArea, QLineEdit
 
 
 def wrap(widget: QWidget, margin_left: int = 0, margin_top: int = 0, margin_right: int = 0,
@@ -132,6 +133,7 @@ class MenuSectionWidget(QWidget):
         vbox(self, 0, 0)
         section = QPushButton(text)
         transparent(section)
+        section.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         if icon:
             section.setIcon(icon)
 
@@ -146,6 +148,9 @@ class MenuWidget(QWidget):
         super().__init__(parent)
         self.setWindowFlags(Qt.WindowType.Popup | Qt.WindowType.FramelessWindowHint)
         self.setStyleSheet('''
+        MenuWidget {
+            background-color: #F5F5F5;
+        }
         QFrame {
             background-color: #F5F5F5;
             padding-left: 5px;
@@ -164,10 +169,12 @@ class MenuWidget(QWidget):
         ''')
 
         self._tooltipDisplayMode = ActionTooltipDisplayMode.ON_HOVER
+        self._search: Optional[QLineEdit] = None
         vbox(self, 0, 0)
         self._menuItems: List[MenuItemWidget] = []
         self._frame = QFrame()
         self._initLayout()
+        self.layout().addWidget(vspacer())
 
         if isinstance(parent, QAbstractButton):
             MenuDelegate(parent, self)
@@ -192,6 +199,18 @@ class MenuWidget(QWidget):
         self._tooltipDisplayMode = mode
         for item in self._menuItems:
             item.setTooltipDisplayMode(self._tooltipDisplayMode)
+
+    def setSearchEnabled(self, enabled: bool):
+        if enabled:
+            self._search = QLineEdit()
+            self._search.setPlaceholderText('Search...')
+            self._search.setClearButtonEnabled(True)
+            self._search.textChanged.connect(self._applySearch)
+            self.layout().insertWidget(0, wrap(self._search, margin_left=5, margin_right=5),
+                                       alignment=Qt.AlignmentFlag.AlignRight)
+        elif self._search:
+            self.layout().removeWidget(self._search)
+            self._search = None
 
     def clear(self):
         self._menuItems.clear()
@@ -237,6 +256,9 @@ class MenuWidget(QWidget):
         self._posAnim.setEasingCurve(QEasingCurve.Type.OutQuad)
         self._posAnim.start()
 
+        if self._search:
+            self._search.setFocus()
+
         self.show()
 
     def _positionAnimChanged(self, pos: QPoint):
@@ -251,6 +273,17 @@ class MenuWidget(QWidget):
         wdg.triggered.connect(self.close)
         self._menuItems.append(wdg)
         return wdg
+
+    def _applySearch(self, text: str):
+        if not text:
+            for item in self._menuItems:
+                item.setVisible(True)
+
+        for item in self._menuItems:
+            if re.search(text, item.action().text(), re.IGNORECASE):
+                item.setVisible(True)
+            else:
+                item.setHidden(True)
 
 
 class ScrollableMenuWidget(MenuWidget):

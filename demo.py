@@ -30,6 +30,7 @@ class MainWindow(QMainWindow):
         self._menu.addAction(QAction(qtawesome.icon('ei.adjust-alt'), 'Action 2'), 2, 1)
         # self._menu.addSection('Section', 3, 1, icon=qtawesome.icon('ei.child'))
         self._menu.addAction(QAction(qtawesome.icon('ei.child'), 'Action 3'), 3, 0)
+        self._menu.setSearchEnabled(True)
 
 
 if __name__ == '__main__':
