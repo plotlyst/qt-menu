@@ -4,7 +4,7 @@ import qtawesome
 from qtpy.QtGui import QAction
 from qtpy.QtWidgets import QMainWindow, QApplication, QWidget, QVBoxLayout, QPushButton
 
-from qtmenu import MenuWidget, ActionTooltipDisplayMode
+from qtmenu import ActionTooltipDisplayMode, GridMenuWidget
 
 
 class MainWindow(QMainWindow):
@@ -19,16 +19,17 @@ class MainWindow(QMainWindow):
         self._btn = QPushButton('Test')
         self.widget.layout().addWidget(self._btn)
 
-        self._menu = MenuWidget(self._btn)
+        self._menu = GridMenuWidget(self._btn)
         action = QAction(qtawesome.icon('ei.adjust'), 'Action 1')
         action.triggered.connect(lambda: print('clicked'))
         action.setToolTip('Test description which is much longer than before')
         self._menu.setTooltipDisplayMode(ActionTooltipDisplayMode.DISPLAY_UNDER)
-        self._menu.addSection('Section 1')
-        self._menu.addAction(action)
-        self._menu.addAction(QAction(qtawesome.icon('ei.adjust-alt'), 'Action 2'))
-        self._menu.addSection('Section', qtawesome.icon('ei.child'))
-        self._menu.addAction(QAction(qtawesome.icon('ei.child'), 'Action 3'))
+        self._menu.addSection('Section 1', 0, 0, colSpan=2)
+        self._menu.addSeparator(1, 0, colSpan=2)
+        self._menu.addAction(action, 2, 0)
+        self._menu.addAction(QAction(qtawesome.icon('ei.adjust-alt'), 'Action 2'), 2, 1)
+        # self._menu.addSection('Section', 3, 1, icon=qtawesome.icon('ei.child'))
+        self._menu.addAction(QAction(qtawesome.icon('ei.child'), 'Action 3'), 3, 0)
 
 
 if __name__ == '__main__':

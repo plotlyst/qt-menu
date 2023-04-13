@@ -1,7 +1,7 @@
 from enum import Enum
 from typing import List, Optional
 
-from qthandy import vbox, transparent, clear_layout, line, margins, decr_font, hbox
+from qthandy import vbox, transparent, clear_layout, margins, decr_font, hbox, grid, line
 from qtpy.QtCore import Qt, Signal, QSize, QPropertyAnimation, QEasingCurve, QPoint, QObject, QEvent, QTimer
 from qtpy.QtGui import QAction, QRegion, QMouseEvent, QCursor, QShowEvent, QHideEvent
 from qtpy.QtWidgets import QApplication, QAbstractButton, QToolButton, QLabel, QFrame, QWidget, QPushButton, QMenu, \
@@ -27,6 +27,10 @@ def group(*widgets, margin: int = 2, spacing: int = 3, parent=None, vertical: bo
     for w in widgets:
         container.layout().addWidget(w)
     return container
+
+
+def separator() -> QFrame:
+    return line(color='#DCDCDC')
 
 
 class MouseEventDelegate(QObject):
@@ -122,6 +126,18 @@ class MenuItemWidget(QFrame):
         self._action.trigger()
 
 
+class MenuSectionWidget(QWidget):
+    def __init__(self, text: str, icon=None, parent=None):
+        super(MenuSectionWidget, self).__init__(parent)
+        vbox(self, 0, 0)
+        section = QPushButton(text)
+        transparent(section)
+        if icon:
+            section.setIcon(icon)
+
+        self.layout().addWidget(section)
+
+
 class MenuWidget(QWidget):
     aboutToShow = Signal()
     aboutToHide = Signal()
@@ -151,7 +167,6 @@ class MenuWidget(QWidget):
         vbox(self, 0, 0)
         self._menuItems: List[MenuItemWidget] = []
         self._frame = QFrame()
-        vbox(self._frame, spacing=0)
         self._initLayout()
 
         if isinstance(parent, QAbstractButton):
@@ -164,6 +179,7 @@ class MenuWidget(QWidget):
         self._posAnim.valueChanged.connect(self._positionAnimChanged)
 
     def _initLayout(self):
+        vbox(self._frame, spacing=0)
         self.layout().addWidget(self._frame)
 
     def actions(self) -> List[QAction]:
@@ -185,24 +201,18 @@ class MenuWidget(QWidget):
         return self._frame.layout().count() == 0
 
     def addAction(self, action: QAction):
-        wdg = MenuItemWidget(action, self, self._tooltipDisplayMode)
-        wdg.triggered.connect(self.close)
+        wdg = self._newMenuItem(action)
         self._frame.layout().addWidget(wdg)
-        self._menuItems.append(wdg)
 
     def addWidget(self, widget):
         self._frame.layout().addWidget(widget)
 
     def addSection(self, text: str, icon=None):
-        section = QPushButton(text)
-        transparent(section)
-        if icon:
-            section.setIcon(icon)
+        section = MenuSectionWidget(text, icon)
         self._frame.layout().addWidget(wrap(section, margin_left=2, margin_top=2), alignment=Qt.AlignmentFlag.AlignLeft)
-        self.addSeparator()
 
     def addSeparator(self):
-        self._frame.layout().addWidget(line(color='#DCDCDC'))
+        self._frame.layout().addWidget(separator())
 
     def hideEvent(self, e):
         self.aboutToHide.emit()
@@ -236,6 +246,12 @@ class MenuWidget(QWidget):
         y = self._posAnim.endValue().y() - pos.y()
         self.setMask(QRegion(0, y, w, h))
 
+    def _newMenuItem(self, action: QAction) -> MenuItemWidget:
+        wdg = MenuItemWidget(action, self, self._tooltipDisplayMode)
+        wdg.triggered.connect(self.close)
+        self._menuItems.append(wdg)
+        return wdg
+
 
 class ScrollableMenuWidget(MenuWidget):
     def __init__(self, parent=None):
@@ -245,7 +261,29 @@ class ScrollableMenuWidget(MenuWidget):
 
     def _initLayout(self):
         self.layout().addWidget(self._scrollarea)
+        vbox(self._frame, spacing=0)
         self._scrollarea.setWidget(self._frame)
+
+
+class GridMenuWidget(MenuWidget):
+    def __init__(self, parent=None):
+        super(GridMenuWidget, self).__init__(parent)
+
+    def _initLayout(self):
+        layout = grid(self._frame)
+        self.layout().addWidget(self._frame)
+
+    def addAction(self, action: QAction, row: int, column: int, rowSpan: int = 1, colSpan: int = 1):
+        wdg = self._newMenuItem(action)
+        self._frame.layout().addWidget(wdg, row, column, rowSpan, colSpan)
+
+    def addSection(self, text: str, row: int, column: int, rowSpan: int = 1, colSpan: int = 1, icon=None):
+        section = MenuSectionWidget(text, icon)
+        self._frame.layout().addWidget(wrap(section, margin_left=2, margin_top=2), row, column, rowSpan, colSpan,
+                                       alignment=Qt.AlignmentFlag.AlignLeft)
+
+    def addSeparator(self, row: int, column: int, rowSpan: int = 1, colSpan: int = 1):
+        self._frame.layout().addWidget(separator(), row, column, rowSpan, colSpan)
 
 
 class MenuDelegate(QMenu):
