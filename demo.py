@@ -23,6 +23,10 @@ class MainWindow(QMainWindow):
         action.toggled.connect(lambda x: print(f'toggled {x}'))
         action.triggered.connect(lambda: print('triggered but why'))
         self._menuSimple.addAction(action)
+        submenu = MenuWidget()
+        submenu.setTitle('Submenu')
+        submenu.addAction(QAction('Subaction1'))
+        self._menuSimple.addMenu(submenu)
 
         self._btnGrid = QPushButton('Grid menu')
         self._menuGrid = GridMenuWidget(self._btnGrid)

@@ -1,10 +1,11 @@
 import re
 from enum import Enum
+from functools import partial
 from typing import List, Optional
 
 from qthandy import vbox, transparent, clear_layout, margins, decr_font, hbox, grid, line, sp, vspacer
-from qtpy.QtCore import Qt, Signal, QSize, QPropertyAnimation, QEasingCurve, QPoint, QObject, QEvent, QTimer
-from qtpy.QtGui import QAction, QRegion, QMouseEvent, QCursor, QShowEvent, QHideEvent
+from qtpy.QtCore import Qt, Signal, QSize, QPropertyAnimation, QEasingCurve, QPoint, QObject, QEvent, QTimer, QMargins
+from qtpy.QtGui import QAction, QRegion, QMouseEvent, QCursor, QShowEvent, QHideEvent, QIcon
 from qtpy.QtWidgets import QApplication, QAbstractButton, QToolButton, QLabel, QFrame, QWidget, QPushButton, QMenu, \
     QScrollArea, QLineEdit, QCheckBox
 
@@ -138,7 +139,7 @@ class MenuItemWidget(QFrame):
 class MenuSectionWidget(QWidget):
     def __init__(self, text: str, icon=None, parent=None):
         super(MenuSectionWidget, self).__init__(parent)
-        vbox(self, 0, 0)
+        hbox(self, 0, 0)
         section = QPushButton(text)
         transparent(section)
         section.setFocusPolicy(Qt.FocusPolicy.NoFocus)
@@ -146,6 +147,44 @@ class MenuSectionWidget(QWidget):
             section.setIcon(icon)
 
         self.layout().addWidget(section)
+
+
+class SubmenuWidget(QFrame):
+    triggered = Signal()
+
+    def __init__(self, menu: 'MenuWidget', parentMenu: 'MenuWidget'):
+        super(SubmenuWidget, self).__init__(parentMenu)
+        self._menu = menu
+        hbox(self, 5, 0)
+        submenu = QPushButton(self._menu.title())
+        submenu.installEventFilter(MouseEventDelegate(submenu, self))
+        transparent(submenu)
+
+        chevron = QLabel()
+        transparent(chevron)
+        chevron.setText(u'\u27A4')
+
+        if self._menu.icon():
+            submenu.setIcon(self._menu.icon())
+        self.layout().addWidget(submenu)
+        self.layout().addWidget(chevron, alignment=Qt.AlignmentFlag.AlignRight)
+
+    def menu(self) -> 'MenuWidget':
+        return self._menu
+
+    def mousePressEvent(self, event: QMouseEvent) -> None:
+        self.setProperty('pressed', True)
+        self._restyle()
+
+    def mouseReleaseEvent(self, event: QMouseEvent) -> None:
+        self.setProperty('pressed', False)
+        QTimer.singleShot(10, self.triggered.emit)
+        self._restyle()
+
+    def _restyle(self):
+        self.style().unpolish(self)
+        self.style().polish(self)
+        self.update()
 
 
 class MenuWidget(QWidget):
@@ -156,37 +195,49 @@ class MenuWidget(QWidget):
         super().__init__(parent)
         self.setWindowFlags(Qt.WindowType.Popup | Qt.WindowType.FramelessWindowHint)
         self.setStyleSheet('''
-        MenuWidget {
-            background-color: #F5F5F5;
-        }
-        QFrame {
-            background-color: #F5F5F5;
-            padding-left: 5px;
-            padding-right: 5px;
-            border-radius: 5px;
-        }
-        MenuItemWidget:hover {
-            background-color:#EDEDED;
-        }
-        MenuItemWidget[pressed=true] {
-            background-color:#DCDCDC;
-        }
-        QLabel[description=true] {
-            color: grey;
-        }
+            MenuWidget {
+                background-color: #F5F5F5;
+            }
+            QFrame {
+                background-color: #F5F5F5;
+                padding-left: 2px;
+                padding-right: 2px;
+                border-radius: 5px;
+            }
+            MenuItemWidget:hover {
+                background-color:#EDEDED;
+            }
+            MenuItemWidget[pressed=true] {
+                background-color:#DCDCDC;
+            }
+            SubmenuWidget:hover {
+                background-color:#EDEDED;
+            }
+            SubmenuWidget[pressed=true] {
+                background-color:#DCDCDC;
+            }
+            QLabel[description=true] {
+                color: grey;
+            }
         ''')
 
+        self._icon: Optional[QIcon] = None
+        self._title: str = ''
+        self._parentMenu: Optional[MenuWidget] = None
         self._tooltipDisplayMode = ActionTooltipDisplayMode.ON_HOVER
         self._search: Optional[QLineEdit] = None
         self._endSpacer: Optional[QWidget] = None
         vbox(self, 0, 0)
         self._menuItems: List[MenuItemWidget] = []
+        self._subMenus: List['SubmenuWidget'] = []
         self._frame = QFrame()
         self._initLayout()
 
         if isinstance(parent, QAbstractButton):
             MenuDelegate(parent, self)
             parent.clicked.connect(lambda: self.exec())
+        elif isinstance(parent, MenuWidget):
+            self.setParentMenu(parent)
 
         self._posAnim = QPropertyAnimation(self, b'pos', self)
         self._posAnim.setDuration(120)
@@ -199,6 +250,22 @@ class MenuWidget(QWidget):
 
     def actions(self) -> List[QAction]:
         return [x.action() for x in self._menuItems]
+
+    def icon(self) -> Optional[QIcon]:
+        return self._icon
+
+    def setIcon(self, icon: QIcon):
+        self._icon = icon
+
+    def title(self) -> str:
+        return self._title
+
+    def setTitle(self, title: str):
+        self._title = title
+
+    def setParentMenu(self, parentMenu: 'MenuWidget'):
+        self._parentMenu = parentMenu
+        margins(self, left=0, right=0)
 
     def tooltipDisplayMode(self) -> ActionTooltipDisplayMode:
         return self._tooltipDisplayMode
@@ -228,6 +295,7 @@ class MenuWidget(QWidget):
 
     def clear(self):
         self._menuItems.clear()
+        self._subMenus.clear()
         clear_layout(self._frame)
 
     def isEmpty(self) -> bool:
@@ -247,9 +315,18 @@ class MenuWidget(QWidget):
     def addSeparator(self):
         self._frame.layout().addWidget(separator())
 
+    def addMenu(self, menu: 'MenuWidget'):
+        submenu = SubmenuWidget(menu, self)
+        menu.setParentMenu(self)
+        submenu.triggered.connect(partial(self._showSubmenu, submenu))
+        self._subMenus.append(submenu)
+        self._frame.layout().addWidget(submenu)
+
     def hideEvent(self, e):
         self.aboutToHide.emit()
         e.accept()
+        if self._parentMenu:
+            self._parentMenu.close()
 
     def exec(self, pos: Optional[QPoint] = None):
         if pos is None:
@@ -274,6 +351,12 @@ class MenuWidget(QWidget):
             self._search.setFocus()
 
         self.show()
+
+    def _showSubmenu(self, submenu: SubmenuWidget):
+        margins: QMargins = self.layout().contentsMargins()
+        pos = submenu.mapToGlobal(QPoint(submenu.width() + margins.left() + margins.right(), 0))
+        submenu.menu().exec(pos)
+        submenu.menu().lower()
 
     def _positionAnimChanged(self, pos: QPoint):
         m = self.layout().contentsMargins()
