@@ -5,7 +5,7 @@ from typing import List, Optional
 
 from qthandy import vbox, transparent, clear_layout, margins, decr_font, hbox, grid, line, sp, vspacer
 from qtpy.QtCore import Qt, Signal, QSize, QPropertyAnimation, QEasingCurve, QPoint, QObject, QEvent, QTimer, QMargins
-from qtpy.QtGui import QAction, QRegion, QMouseEvent, QCursor, QShowEvent, QHideEvent, QIcon
+from qtpy.QtGui import QAction, QMouseEvent, QCursor, QShowEvent, QHideEvent, QIcon
 from qtpy.QtWidgets import QApplication, QAbstractButton, QToolButton, QLabel, QFrame, QWidget, QPushButton, QMenu, \
     QScrollArea, QLineEdit, QCheckBox
 
@@ -239,7 +239,7 @@ class MenuWidget(QWidget):
         elif isinstance(parent, MenuWidget):
             self.setParentMenu(parent)
 
-        self._posAnim = QPropertyAnimation(self, b'pos', self)
+        self._posAnim = QPropertyAnimation(self, b'maximumHeight', self)
         self._posAnim.setDuration(120)
         self._posAnim.setEasingCurve(QEasingCurve.Type.OutQuad)
         self._posAnim.valueChanged.connect(self._positionAnimChanged)
@@ -341,10 +341,11 @@ class MenuWidget(QWidget):
         pos.setX(min(pos.x() - self.layout().contentsMargins().left(), screen_rect.right() - w))
         pos.setY(min(pos.y() - 4, screen_rect.bottom() - h))
 
+        self.move(pos)
+
         self.aboutToShow.emit()
-        self._posAnim.setStartValue(pos - QPoint(0, int(h / 2)))
-        self._posAnim.setEndValue(pos)
-        self._posAnim.setEasingCurve(QEasingCurve.Type.OutQuad)
+        self._posAnim.setStartValue(20)
+        self._posAnim.setEndValue(self.sizeHint().height())
         self._posAnim.start()
 
         if self._search:
@@ -358,12 +359,8 @@ class MenuWidget(QWidget):
         submenu.menu().exec(pos)
         submenu.menu().lower()
 
-    def _positionAnimChanged(self, pos: QPoint):
-        m = self.layout().contentsMargins()
-        w = self.width() + m.left() + m.right()
-        h = self.height() + m.top() + m.bottom()
-        y = self._posAnim.endValue().y() - pos.y()
-        self.setMask(QRegion(0, y, w, h))
+    def _positionAnimChanged(self, value: int):
+        self.setFixedHeight(value)
 
     def _newMenuItem(self, action: QAction) -> MenuItemWidget:
         wdg = MenuItemWidget(action, self, self._tooltipDisplayMode)
