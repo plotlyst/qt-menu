@@ -428,6 +428,12 @@ class MenuDelegate(QMenu):
     def showEvent(self, a0: QShowEvent) -> None:
         self._menu.exec()
 
+    def hide(self) -> None:
+        self._menu.hide()
+
+    def close(self) -> bool:
+        return self._menu.close()
+
     def hideEvent(self, event: QHideEvent) -> None:
         super(MenuDelegate, self).hideEvent(event)
 
