@@ -5,7 +5,7 @@ from typing import List, Optional
 
 from qthandy import vbox, transparent, clear_layout, margins, decr_font, hbox, grid, line, sp, vspacer
 from qtpy.QtCore import Qt, Signal, QSize, QPropertyAnimation, QEasingCurve, QPoint, QObject, QEvent, QTimer, QMargins
-from qtpy.QtGui import QAction, QMouseEvent, QCursor, QShowEvent, QHideEvent, QIcon
+from qtpy.QtGui import QAction, QMouseEvent, QCursor, QShowEvent, QHideEvent, QIcon, QFont
 from qtpy.QtWidgets import QApplication, QAbstractButton, QToolButton, QLabel, QFrame, QWidget, QPushButton, QMenu, \
     QScrollArea, QLineEdit, QCheckBox
 
@@ -75,6 +75,12 @@ class MenuItemWidget(QFrame):
         self._icon.setIconSize(QSize(16, 16))
         self._icon.installEventFilter(MouseEventDelegate(self._icon, self))
         self._text = QLabel(self)
+        font: QFont = self._text.font()
+        font.setItalic(self._action.font().italic())
+        font.setBold(self._action.font().bold())
+        font.setUnderline(self._action.font().underline())
+        self._text.setFont(font)
+
         transparent(self._text)
         self._description = QLabel(self._action.toolTip())
         self._description.setProperty('description', True)
