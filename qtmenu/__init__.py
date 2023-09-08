@@ -31,8 +31,8 @@ def group(*widgets, margin: int = 2, spacing: int = 3, parent=None, vertical: bo
     return container
 
 
-def separator() -> QFrame:
-    return line(color='#DCDCDC')
+def separator(vertical: bool = False) -> QFrame:
+    return line(vertical=vertical, color='#DCDCDC')
 
 
 class MouseEventDelegate(QObject):
@@ -409,8 +409,8 @@ class GridMenuWidget(MenuWidget):
         self._frame.layout().addWidget(wrap(section, margin_left=2, margin_top=2), row, column, rowSpan, colSpan,
                                        alignment=Qt.AlignmentFlag.AlignLeft)
 
-    def addSeparator(self, row: int, column: int, rowSpan: int = 1, colSpan: int = 1):
-        self._frame.layout().addWidget(separator(), row, column, rowSpan, colSpan)
+    def addSeparator(self, row: int, column: int, rowSpan: int = 1, colSpan: int = 1, vertical: bool = False):
+        self._frame.layout().addWidget(separator(vertical), row, column, rowSpan, colSpan)
 
 
 class MenuDelegate(QMenu):
