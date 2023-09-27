@@ -7,7 +7,7 @@ from qthandy import vbox, transparent, clear_layout, margins, decr_font, hbox, g
 from qtpy.QtCore import Qt, Signal, QSize, QPropertyAnimation, QEasingCurve, QPoint, QObject, QEvent, QTimer, QMargins
 from qtpy.QtGui import QAction, QMouseEvent, QCursor, QShowEvent, QHideEvent, QIcon, QFont
 from qtpy.QtWidgets import QApplication, QAbstractButton, QToolButton, QLabel, QFrame, QWidget, QPushButton, QMenu, \
-    QScrollArea, QLineEdit, QCheckBox
+    QScrollArea, QLineEdit, QCheckBox, QTabWidget
 
 
 def wrap(widget: QWidget, margin_left: int = 0, margin_top: int = 0, margin_right: int = 0,
@@ -417,6 +417,42 @@ class GridMenuWidget(MenuWidget):
 
     def addSeparator(self, row: int, column: int, rowSpan: int = 1, colSpan: int = 1, vertical: bool = False):
         self._frame.layout().addWidget(separator(vertical), row, column, rowSpan, colSpan)
+
+
+class TabularGridMenuWidget(MenuWidget):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+
+    def _initLayout(self):
+        self._frame = QTabWidget()
+        self.layout().addWidget(self._frame)
+
+    def addTab(self, name: str, icon: Optional[QIcon] = None) -> QWidget:
+        tab = QWidget(self._frame)
+        grid(tab)
+        if icon:
+            self._frame.addTab(tab, icon, name)
+        else:
+            self._frame.addTab(tab, name)
+
+        return tab
+
+    def addWidget(self, tabWidget: QWidget, wdg: QWidget, row: int, column: int, rowSpan: int = 1, colSpan: int = 1):
+        tabWidget.layout().addWidget(wdg, row, column, rowSpan, colSpan)
+
+    def addAction(self, tabWidget: QWidget, action: QAction, row: int, column: int, rowSpan: int = 1, colSpan: int = 1):
+        wdg = self._newMenuItem(action)
+        tabWidget.layout().addWidget(wdg, row, column, rowSpan, colSpan)
+
+    def addSection(self, tabWidget: QWidget, text: str, row: int, column: int, rowSpan: int = 1, colSpan: int = 1,
+                   icon=None):
+        section = MenuSectionWidget(text, icon)
+        tabWidget.layout().addWidget(wrap(section, margin_left=2, margin_top=2), row, column, rowSpan, colSpan,
+                                     alignment=Qt.AlignmentFlag.AlignLeft)
+
+    def addSeparator(self, tabWidget: QWidget, row: int, column: int, rowSpan: int = 1, colSpan: int = 1,
+                     vertical: bool = False):
+        tabWidget.layout().addWidget(separator(vertical), row, column, rowSpan, colSpan)
 
 
 class MenuDelegate(QMenu):
