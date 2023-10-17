@@ -344,7 +344,7 @@ class MenuWidget(QWidget):
                 pos = QCursor.pos()
 
         screen_rect = QApplication.screenAt(pos).availableGeometry()
-        w, h = self.width() + 5, self.height() + 5
+        w, h = self.sizeHint().width() + 5, self.sizeHint().height() + 5
         pos.setX(min(pos.x() - self.layout().contentsMargins().left(), screen_rect.right() - w))
         pos.setY(min(pos.y() - 4, screen_rect.bottom() - h))
 
