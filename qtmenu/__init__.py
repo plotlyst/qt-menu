@@ -335,6 +335,7 @@ class MenuWidget(QWidget):
             self._parentMenu.close()
 
     def exec(self, pos: Optional[QPoint] = None):
+        self.aboutToShow.emit()
         if pos is None:
             if self.parent() and self.parent().parent():
                 pos = self.parent().parent().mapToGlobal(self.parent().pos())
@@ -349,7 +350,6 @@ class MenuWidget(QWidget):
 
         self.move(pos)
 
-        self.aboutToShow.emit()
         self._posAnim.setStartValue(20)
         self._posAnim.setEndValue(self.sizeHint().height())
         self._posAnim.start()
