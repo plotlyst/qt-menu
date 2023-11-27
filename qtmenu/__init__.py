@@ -363,7 +363,6 @@ class MenuWidget(QWidget):
         margins: QMargins = self.layout().contentsMargins()
         pos = submenu.mapToGlobal(QPoint(submenu.width() + margins.left() + margins.right(), 0))
         submenu.menu().exec(pos)
-        submenu.menu().lower()
 
     def _positionAnimChanged(self, value: int):
         self.setFixedHeight(value)
