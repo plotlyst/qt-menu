@@ -334,7 +334,7 @@ class MenuWidget(QWidget):
         if self._parentMenu:
             self._parentMenu.close()
 
-    def exec(self, pos: Optional[QPoint] = None):
+    def exec(self, pos: Optional[QPoint] = None, animated: bool = True):
         self.aboutToShow.emit()
         if pos is None:
             if self.parent() and self.parent().parent():
@@ -352,7 +352,8 @@ class MenuWidget(QWidget):
 
         self._posAnim.setStartValue(20)
         self._posAnim.setEndValue(self.sizeHint().height())
-        self._posAnim.start()
+        if animated:
+            self._posAnim.start()
 
         if self._search:
             self._search.setFocus()
