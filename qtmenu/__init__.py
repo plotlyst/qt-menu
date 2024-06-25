@@ -88,7 +88,7 @@ class MenuItemWidget(QFrame):
         decr_font(self._description)
 
         self.layout().addWidget(group(self._checkBox, self._icon, self._text, margin=0, spacing=1))
-        self.layout().addWidget(self._description)
+        self.layout().addWidget(wrap(self._description, margin_left=5))
 
         self._action.changed.connect(self.refresh)
         self.refresh()
