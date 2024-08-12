@@ -172,7 +172,7 @@ class SubmenuWidget(QFrame):
 
         if self._menu.icon():
             submenu.setIcon(self._menu.icon())
-        self.layout().addWidget(submenu)
+        self.layout().addWidget(submenu, alignment=Qt.AlignmentFlag.AlignLeft)
         self.layout().addWidget(chevron, alignment=Qt.AlignmentFlag.AlignRight)
 
     def menu(self) -> 'MenuWidget':
