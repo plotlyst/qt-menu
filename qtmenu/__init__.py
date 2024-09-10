@@ -74,11 +74,7 @@ class MenuItemWidget(QFrame):
         transparent(self._icon)
         self._icon.installEventFilter(MouseEventDelegate(self._icon, self))
         self._text = QLabel(self)
-        font: QFont = self._text.font()
-        font.setItalic(self._action.font().italic())
-        font.setBold(self._action.font().bold())
-        font.setUnderline(self._action.font().underline())
-        self._text.setFont(font)
+        self._text.setFont(self._action.font())
 
         transparent(self._text)
         self._description = QLabel(self._action.toolTip())
