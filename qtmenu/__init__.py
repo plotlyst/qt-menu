@@ -4,8 +4,8 @@ from functools import partial
 from typing import List, Optional
 
 from qthandy import vbox, transparent, clear_layout, margins, decr_font, hbox, grid, line, sp, vspacer
-from qtpy.QtCore import Qt, Signal, QSize, QPropertyAnimation, QEasingCurve, QPoint, QObject, QEvent, QTimer, QMargins
-from qtpy.QtGui import QAction, QMouseEvent, QCursor, QShowEvent, QHideEvent, QIcon, QFont
+from qtpy.QtCore import Qt, Signal, QPropertyAnimation, QEasingCurve, QPoint, QObject, QEvent, QTimer, QMargins
+from qtpy.QtGui import QAction, QMouseEvent, QCursor, QShowEvent, QHideEvent, QIcon
 from qtpy.QtWidgets import QApplication, QAbstractButton, QToolButton, QLabel, QFrame, QWidget, QPushButton, QMenu, \
     QScrollArea, QLineEdit, QCheckBox, QTabWidget
 
@@ -72,7 +72,6 @@ class MenuItemWidget(QFrame):
         sp(self._checkBox).h_max()
         self._icon = QToolButton(self)
         transparent(self._icon)
-        self._icon.setIconSize(QSize(16, 16))
         self._icon.installEventFilter(MouseEventDelegate(self._icon, self))
         self._text = QLabel(self)
         font: QFont = self._text.font()
