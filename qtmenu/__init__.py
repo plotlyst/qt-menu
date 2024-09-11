@@ -197,28 +197,25 @@ class MenuWidget(QWidget):
         self.setWindowFlags(Qt.WindowType.Popup | Qt.WindowType.FramelessWindowHint)
         self.setStyleSheet('''
             MenuWidget {
-                background-color: #F5F5F5;
+                background-color: #EFEFF4;
             }
-            QFrame {
-                background-color: #F5F5F5;
+            .QFrame {
+                background-color: #EFEFF4;
                 padding-left: 2px;
                 padding-right: 2px;
                 border-radius: 5px;
             }
             MenuItemWidget:hover {
-                background-color:#EDEDED;
+                background-color:#F0E6F4;
             }
             MenuItemWidget[pressed=true] {
                 background-color:#DCDCDC;
             }
             SubmenuWidget:hover {
-                background-color:#EDEDED;
+                background-color:#F0E6F4;
             }
             SubmenuWidget[pressed=true] {
                 background-color:#DCDCDC;
-            }
-            QLabel[description=true] {
-                color: grey;
             }
         ''')
 
