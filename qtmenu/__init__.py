@@ -103,12 +103,12 @@ class MenuItemWidget(QFrame):
             self._text.setToolTip('')
             self._description.setHidden(True)
         else:
-            self._icon.setToolTip(self._action.toolTip())
-            self._text.setToolTip(self._action.toolTip())
             if self._tooltipDisplayMode == ActionTooltipDisplayMode.DISPLAY_UNDER:
                 self._description.setText(self._action.toolTip())
                 self._description.setVisible(True)
             else:
+                self._icon.setToolTip(self._action.toolTip())
+                self._text.setToolTip(self._action.toolTip())
                 self._description.setHidden(True)
 
         self._checkBox.setChecked(self._action.isChecked())
