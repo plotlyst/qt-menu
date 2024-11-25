@@ -5,7 +5,7 @@ from typing import List, Optional
 
 from qthandy import vbox, transparent, clear_layout, margins, decr_font, hbox, grid, line, sp, vspacer
 from qtpy.QtCore import Qt, Signal, QPropertyAnimation, QEasingCurve, QPoint, QObject, QEvent, QTimer, QMargins
-from qtpy.QtGui import QAction, QMouseEvent, QCursor, QShowEvent, QHideEvent, QIcon
+from qtpy.QtGui import QAction, QMouseEvent, QCursor, QShowEvent, QHideEvent, QIcon, QKeyEvent
 from qtpy.QtWidgets import QApplication, QAbstractButton, QToolButton, QLabel, QFrame, QWidget, QPushButton, QMenu, \
     QScrollArea, QLineEdit, QCheckBox, QTabWidget
 
@@ -125,6 +125,13 @@ class MenuItemWidget(QFrame):
         QTimer.singleShot(10, self._trigger)
         self._restyle()
 
+    def highlight(self, enabled: bool = True):
+        self.setProperty('highlighted', enabled)
+        self._restyle()
+
+    def trigger(self):
+        self._trigger()
+
     def _restyle(self):
         self.style().unpolish(self)
         self.style().polish(self)
@@ -208,6 +215,9 @@ class MenuWidget(QWidget):
             MenuItemWidget:hover {
                 background-color:#F0E6F4;
             }
+            MenuItemWidget[highlighted=true] {
+                background-color:#D4B8E0;
+            }
             MenuItemWidget[pressed=true] {
                 background-color:#DCDCDC;
             }
@@ -224,8 +234,10 @@ class MenuWidget(QWidget):
         self._parentMenu: Optional[MenuWidget] = None
         self._tooltipDisplayMode = ActionTooltipDisplayMode.ON_HOVER
         self._search: Optional[QLineEdit] = None
+        self._keyNavigationEnabled: bool = False
         self._endSpacer: Optional[QWidget] = None
         vbox(self, 0, 0)
+        self._currentFocus = 0
         self._menuItems: List[MenuItemWidget] = []
         self._subMenus: List['SubmenuWidget'] = []
         self._frame = QFrame()
@@ -291,6 +303,14 @@ class MenuWidget(QWidget):
             self.layout().removeWidget(self._endSpacer)
             self._endSpacer = None
 
+    def setKeyNavigationEnabled(self, enabled):
+        self._keyNavigationEnabled = enabled
+        if enabled:
+            self._currentFocus = 0
+            self._setFocus(self._currentFocus, True)
+        else:
+            self._setFocus(self._currentFocus, False)
+
     def clear(self):
         self._menuItems.clear()
         self._subMenus.clear()
@@ -325,6 +345,16 @@ class MenuWidget(QWidget):
         e.accept()
         if self._parentMenu:
             self._parentMenu.close()
+
+    def keyPressEvent(self, event: QKeyEvent):
+        if self._keyNavigationEnabled:
+            if event.key() == Qt.Key_Up:
+                self._changeFocus(-1)
+            elif event.key() == Qt.Key_Down:
+                self._changeFocus(1)
+            elif event.key() == Qt.Key_Return:
+                self._triggerCurrentAction()
+        super().keyPressEvent(event)
 
     def exec(self, pos: Optional[QPoint] = None, animated: bool = True):
         self.aboutToShow.emit()
@@ -377,11 +407,29 @@ class MenuWidget(QWidget):
             else:
                 item.setHidden(True)
 
+    def _changeFocus(self, direction: int):
+        new_focus = self._currentFocus + direction
+        if 0 <= new_focus < len(self._menuItems):
+            self._setFocus(self._currentFocus, False)
+            self._currentFocus = new_focus
+            self._setFocus(self._currentFocus, True)
+
+    def _setFocus(self, pos: int, focused: bool):
+        if 0 <= pos < len(self._menuItems):
+            item = self._menuItems[pos]
+            item.highlight(focused)
+
+    def _triggerCurrentAction(self):
+        if 0 <= self._currentFocus < len(self._menuItems):
+            item = self._menuItems[self._currentFocus]
+            item.trigger()
+
 
 class ScrollableMenuWidget(MenuWidget):
     def __init__(self, parent=None):
         self._scrollarea = QScrollArea()
         self._scrollarea.setWidgetResizable(True)
+        self._scrollarea.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         super(ScrollableMenuWidget, self).__init__(parent)
 
     def _initLayout(self):
