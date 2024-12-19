@@ -3,8 +3,8 @@ from enum import Enum
 from functools import partial
 from typing import List, Optional
 
-from qthandy import vbox, transparent, clear_layout, margins, decr_font, hbox, grid, line, sp, vspacer
-from qtpy.QtCore import Qt, Signal, QPropertyAnimation, QEasingCurve, QPoint, QObject, QEvent, QTimer, QMargins
+from qthandy import vbox, transparent, clear_layout, margins, hbox, grid, line, sp, vspacer
+from qtpy.QtCore import Qt, Signal, QPropertyAnimation, QEasingCurve, QPoint, QObject, QEvent, QTimer, QMargins, QSize
 from qtpy.QtGui import QAction, QMouseEvent, QCursor, QShowEvent, QHideEvent, QIcon, QKeyEvent
 from qtpy.QtWidgets import QApplication, QAbstractButton, QToolButton, QLabel, QFrame, QWidget, QPushButton, QMenu, \
     QScrollArea, QLineEdit, QCheckBox, QTabWidget
@@ -60,10 +60,12 @@ class ActionTooltipDisplayMode(Enum):
 class MenuItemWidget(QFrame):
     triggered = Signal()
 
-    def __init__(self, action: QAction, parent=None, tooltipMode=ActionTooltipDisplayMode.ON_HOVER):
+    def __init__(self, action: QAction, parent=None, tooltipMode=ActionTooltipDisplayMode.ON_HOVER,
+                 largeIcons: bool = False):
         super().__init__(parent)
         self._action = action
         self._tooltipDisplayMode = tooltipMode
+        self._largeIcons = largeIcons
 
         vbox(self, 5, 0)
 
@@ -80,10 +82,15 @@ class MenuItemWidget(QFrame):
         self._description = QLabel(self._action.toolTip())
         self._description.setProperty('description', True)
         transparent(self._description)
-        decr_font(self._description)
 
-        self.layout().addWidget(group(self._checkBox, self._icon, self._text, margin=0, spacing=1))
-        self.layout().addWidget(wrap(self._description, margin_left=5))
+        if self._largeIcons:
+            self._icon.setIconSize(QSize(32, 32))
+            self.layout().addWidget(group(self._checkBox, self._icon,
+                                          group(self._text, self._description, vertical=True, margin=0, spacing=1),
+                                          margin=0, spacing=1))
+        else:
+            self.layout().addWidget(group(self._checkBox, self._icon, self._text, margin=0, spacing=1))
+            self.layout().addWidget(wrap(self._description, margin_left=20))
 
         self._action.changed.connect(self.refresh)
         self.refresh()
@@ -199,7 +206,7 @@ class MenuWidget(QWidget):
     aboutToShow = Signal()
     aboutToHide = Signal()
 
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, largeIcons: bool = False):
         super().__init__(parent)
         self.setWindowFlags(Qt.WindowType.Popup | Qt.WindowType.FramelessWindowHint)
         self.setStyleSheet('''
@@ -230,6 +237,7 @@ class MenuWidget(QWidget):
         ''')
 
         self._icon: Optional[QIcon] = None
+        self._largeIcons = largeIcons
         self._title: str = ''
         self._parentMenu: Optional[MenuWidget] = None
         self._tooltipDisplayMode = ActionTooltipDisplayMode.ON_HOVER
@@ -391,7 +399,7 @@ class MenuWidget(QWidget):
         self.setFixedHeight(value)
 
     def _newMenuItem(self, action: QAction) -> MenuItemWidget:
-        wdg = MenuItemWidget(action, self, self._tooltipDisplayMode)
+        wdg = MenuItemWidget(action, self, self._tooltipDisplayMode, self._largeIcons)
         wdg.triggered.connect(self.close)
         self._menuItems.append(wdg)
         return wdg
@@ -426,11 +434,11 @@ class MenuWidget(QWidget):
 
 
 class ScrollableMenuWidget(MenuWidget):
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, largeIcons: bool = False):
         self._scrollarea = QScrollArea()
         self._scrollarea.setWidgetResizable(True)
         self._scrollarea.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-        super(ScrollableMenuWidget, self).__init__(parent)
+        super(ScrollableMenuWidget, self).__init__(parent, largeIcons)
 
     def _initLayout(self):
         self.layout().addWidget(self._scrollarea)
@@ -439,8 +447,8 @@ class ScrollableMenuWidget(MenuWidget):
 
 
 class GridMenuWidget(MenuWidget):
-    def __init__(self, parent=None):
-        super(GridMenuWidget, self).__init__(parent)
+    def __init__(self, parent=None, largeIcons: bool = False):
+        super(GridMenuWidget, self).__init__(parent, largeIcons)
 
     def _initLayout(self):
         grid(self._frame)
@@ -460,8 +468,8 @@ class GridMenuWidget(MenuWidget):
 
 
 class TabularGridMenuWidget(MenuWidget):
-    def __init__(self, parent=None):
-        super().__init__(parent)
+    def __init__(self, parent=None, largeIcons: bool = False):
+        super().__init__(parent, largeIcons)
 
     def _initLayout(self):
         self._frame = QTabWidget()
