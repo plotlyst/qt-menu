@@ -84,7 +84,7 @@ class MenuItemWidget(QFrame):
         transparent(self._description)
 
         if self._largeIcons:
-            self._icon.setIconSize(QSize(32, 32))
+            self._icon.setIconSize(QSize(28, 28))
             self.layout().addWidget(group(self._checkBox, self._icon,
                                           group(self._text, self._description, vertical=True, margin=0, spacing=1),
                                           margin=0, spacing=1))
